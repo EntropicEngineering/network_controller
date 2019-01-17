@@ -28,10 +28,24 @@ void setup() {
 void loop() {
   Serial.printf("MAIN LOOP\n");
   // put your main code here, to run repeatedly:
-  normal_read_operation(0x10, 0x12);
+  byte statbuf[2] = {0};
+  normal_read_operation(0x10, 0x12, statbuf, 2);
 
-  Serial.printf("getting link status summary");
-  normal_read_operation(0x01, 0x00);
+  Serial.printf("getting link status summary\n");
+  byte macbuf[6] = {0};
+  normal_read_operation(0x01, 0x1c, macbuf, 6);
+  Serial.printf("MAC:");
+  for (int i = 0; i < 6; i++)
+    Serial.printf(" %02x", macbuf[i]);
+  Serial.printf("\n");
+
+  Serial.printf("reading port 2 (3 on box) status\n");
+  byte portbuf[1] = {0};
+  normal_read_operation(0x00, 0x02, portbuf, 1);
+  Serial.printf("PORT STATUS:");
+  for (int i = 0; i < 1; i++)
+    Serial.printf(" %02x", portbuf[i]);
+  Serial.printf("\n");
 
   delay(1000);
 }
@@ -58,7 +72,7 @@ void do_a_transfer(byte *rcv, byte *snd, size_t n)
 /* 80 char spacer because arduino ide doesn't show line length
 ----+++++----+++++----+++++----+++++----+++++----+++++----+++++----+++++----+++++
 */
-void normal_read_operation(byte page, byte offset) {
+void normal_read_operation(byte page, byte offset, byte *buf, size_t len) {
   /*
    * Normal Read Operation
    * Normal Read operation consists of five transactions (five SS operations):
@@ -176,13 +190,16 @@ delay(10);
   slave_select_on();
   ignore = SPI.transfer(0x60);
   ignore = SPI.transfer(0xf0);
-  byte data[4] = {0};
-  data[0] = SPI.transfer(0x0);
-  data[1] = SPI.transfer(0x0);
+  byte data[16] = {0};
+  for (int i = 0; i < len; i++)
+    data[i] = SPI.transfer(0x0);
+  //data[1] = SPI.transfer(0x0);
   //data[2] = SPI.transfer(0x0);
   //data[3] = SPI.transfer(0x0);
   slave_select_off();
   SPI.endTransaction();
+
+  memcpy(buf, data, len);
 
   Serial.printf("data is %02x %02x X> %02x %02x\n", data[0], data[1], data[2], data[3]);
 }
