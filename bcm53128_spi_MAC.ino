@@ -30,15 +30,30 @@ void loop() {
   // put your main code here, to run repeatedly:
   normal_read_operation(0x10, 0x12);
 
+  Serial.printf("getting link status summary");
+  normal_read_operation(0x01, 0x00);
+
   delay(1000);
 }
 //because ~SS must be low, write SS high
-#define SS_POLARITY 1
+#define SS_POLARITY 0
 void slave_select_on(void) {
   digitalWrite(SLAVE_SELECT, SS_POLARITY ? HIGH : LOW);
 }
 void slave_select_off(void) {
   digitalWrite(SLAVE_SELECT, SS_POLARITY ? LOW : HIGH);
+}
+
+void do_a_transfer(byte *rcv, byte *snd, size_t n)
+{
+  {
+    SPI.beginTransaction(settings);
+    slave_select_on();
+    for (int i = 0; i < n; i++)
+      rcv[i] = SPI.transfer(snd[i]);
+    slave_select_off();
+    SPI.endTransaction();
+  }
 }
 /* 80 char spacer because arduino ide doesn't show line length
 ----+++++----+++++----+++++----+++++----+++++----+++++----+++++----+++++----+++++
@@ -62,19 +77,9 @@ void normal_read_operation(byte page, byte offset) {
 
   int first_time = 1;
   step_1:
-  SPI.beginTransaction(settings);
   byte step1_snd[3] = {0x60, 0xfe, 0x00};
   byte step1_rcv[3] = {0};
-  slave_select_on();
-  /*
-  step1_rcv[0] = SPI.transfer(0x60);
-  step1_rcv[1] = SPI.transfer(0xfe);
-  byte spi_status = step1_rcv[2] = SPI.transfer(0x0);
-  */
-  for (int i = 0; i < 3; i++)
-    step1_rcv[i] = SPI.transfer(step1_snd[i]);
-  slave_select_off();
-  SPI.endTransaction();
+  do_a_transfer(step1_rcv, step1_snd, 3);
   byte spi_status = step1_rcv[2];
   //if (first_time)
     Serial.printf("step1 SEND: %02x %02x %02x\n", step1_snd[0], step1_snd[1], step1_snd[2]);
@@ -98,17 +103,7 @@ delay(10);
   step_2:
   byte step2_snd[3] = {0x61, 0xff, page};
   byte step2_rcv[3] = {0};
-  SPI.beginTransaction(settings);
-  slave_select_on();
-  /*
-  step2_rcv[0] = SPI.transfer(0x61);
-  step2_rcv[1] = SPI.transfer(0xff);
-  step2_rcv[2] = SPI.transfer(page);
-  */
-  for (int i = 0; i < 3; i++)
-    step2_rcv[i] = SPI.transfer(step2_snd[i]);
-  slave_select_off();
-  SPI.endTransaction();
+  do_a_transfer(step2_rcv, step2_snd, 3);
 
   Serial.printf("step2 SEND: %02x %02x %02x\n", step2_snd[0], step2_snd[1], step2_snd[2]);
   Serial.printf("step2 RECV: %02x %02x %02x\n", step2_rcv[0], step2_rcv[1], step2_rcv[2]);

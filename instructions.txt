@@ -1,0 +1,6 @@
+(start with micro connected to switch
+, micro unplugged
+, switch off
+, plug power plug into network switch)
+plug in micro via usb
+turn on power switch of network switch
