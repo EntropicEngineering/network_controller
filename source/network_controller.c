@@ -19,7 +19,6 @@ void normal_read_command_step4(uint8_t bcm_addr);
 #define SPI_BAUDRATE 400000
 SPI_Type *base = SPI2;
 static dspi_master_config_t cfg;
-static dspi_master_handle_t handle;
 #define DSPI_MASTER_CLK_SRC DSPI2_CLK_SRC
 void
 bcm_init_spi()
@@ -114,7 +113,7 @@ normal_read_command(uint8_t bcm_addr)
   DSPI_MasterWriteDataBlocking(base, &cfg_middle, bcm_addr);
   DSPI_MasterWriteDataBlocking(base, &cfg_end, 0x00);
   //TODO return a value
-  uint8_t spi_status = handle.rxData[2];
+  uint8_t spi_status = DSPI_ReadData(SPI2);
   return spi_status;
 }
 void
@@ -137,7 +136,7 @@ normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len)
   for (unsigned int i = 0; i < len; i++) {
     dspi_command_data_config_t *cfg = i+1==len ? &cfg_end : &cfg_middle;
     DSPI_MasterWriteDataBlocking(base, cfg, bcm_addr);
-    res[i] = handle.rxData[i]; // TODO note the rxbuffer probably has 2 garbage bytes in it
+    res[i] = DSPI_ReadData(SPI2);
   }
 }
 
@@ -157,7 +156,7 @@ normal_read_command_step4(uint8_t bcm_addr)
 
   while (!(spi_status & RACK) && ix < STEP4_RCV_SIZE) {
     DSPI_MasterWriteDataBlocking(base, &cfg_middle, 0x0);
-    spi_status = step4_rcv[ix] = handle.rxData[ix]; // TODO read from rxbuffer
+    spi_status = step4_rcv[ix] = DSPI_ReadData(SPI2);
     ix++;
   }
 }
@@ -309,6 +308,7 @@ typedef struct {uint8_t page; uint8_t reg; uint8_t len;} bcm_reg;
 #define BCM_53128_STATUS_LAST_SOURCE_ADDRESS_PORT_6 ((bcm_reg) {0x01, 0x34, 6})
 #define BCM_53128_STATUS_LAST_SOURCE_ADDRESS_PORT_7 ((bcm_reg) {0x01, 0x3a, 6})
 #define BCM_53128_STATUS_LAST_SOURCE_ADDRESS_PORT_IMP ((bcm_reg) {0x01, 0x40, 6})
+#define AS_LEN(a,b,c) c
 
 #define BCM_LAST_MAC_PORT_3 ((bcm_reg) {0x01, 0x22, 6})
 int main(void)
@@ -316,11 +316,8 @@ int main(void)
   BOARD_BootClockRUN();
   BOARD_InitDebugConsole();
 
-  int maclen = BCM_53128_STATUS_LAST_SOURCE_ADDRESS_PORT_2.len;
-
-#define bcm_mac_reg(X) X(0x01, 0x22, 6)
-#define AS_LEN(a,b,c) c
-  int macbuf[bcm_mac_reg(AS_LEN)] = {0};
+  //shelving this trick for now
+  //int macbuf[bcm_mac_reg(AS_LEN)] = {0};
 
   bcm_init_spi();
 
