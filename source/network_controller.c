@@ -5,6 +5,7 @@
 #include "board.h"
 #include "stdint.h"
 #include "fsl_dspi.h"
+#include "fsl_port.h"
 #include "clock_config.h"
 
 #define RACK (1u<<5)
@@ -19,11 +20,22 @@ void normal_read_command_step4(uint8_t bcm_addr);
 #define SPI_BAUDRATE 400000
 SPI_Type *base = SPI2;
 static dspi_master_config_t cfg;
+//CTARs are duplicated per-spi, no clash possibility
+#define NETWORK_SPI_CTAR kDSPI_Ctar1
+//SPI2_PCS0 can be D11 or B20, here it's B20
+#define NETWORK_SPI_PCS kDSPI_Pcs0
 #define DSPI_MASTER_CLK_SRC DSPI2_CLK_SRC
 void
 bcm_init_spi()
 {
-	cfg.whichCtar = kDSPI_Ctar0;
+  //set B20 to ALT2 so it's SPI2_PCS0
+  port_pin_config_t spi_led_settings = {0};
+  spi_led_settings.pullSelect = kPORT_PullUp;
+  spi_led_settings.mux = kPORT_MuxAlt2;
+  CLOCK_EnableClock(kCLOCK_PortB);
+  PORT_SetPinConfig(PORTB, 20U, &spi_led_settings);
+
+	cfg.whichCtar = NETWORK_SPI_CTAR;
 	cfg.ctarConfig.baudRate = SPI_BAUDRATE;
 	cfg.ctarConfig.cpol = kDSPI_ClockPolarityActiveHigh;
 	cfg.ctarConfig.cpha = kDSPI_ClockPhaseFirstEdge;
@@ -78,10 +90,6 @@ normal_read_operation(uint8_t page, uint8_t oset
   return -1;
 }
 //TODO initialize these correctly
-//TODO investigate Ctar choice (totally random atm)
-//TODO investigate pcs choice (totally random atm)
-#define NETWORK_SPI_CTAR kDSPI_Ctar1
-#define NETWORK_SPI_PCS kDSPI_Pcs0
 dspi_command_data_config_t cfg_start = {
   .isPcsContinuous = true,
   .whichCtar = NETWORK_SPI_CTAR,
