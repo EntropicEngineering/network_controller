@@ -122,6 +122,7 @@ normal_read_command(uint8_t bcm_addr)
 {
   //TODO write [0x60, bcm_addr, 0x00] to spi, return third received byte
   //TODO could make only the last one blocking
+  base->SR = SPI_SR_EOQF_MASK;
   DSPI_MasterWriteDataBlocking(base, &cfg_start, 0x60);
   DSPI_MasterWriteDataBlocking(base, &cfg_middle, bcm_addr);
   DSPI_MasterWriteDataBlocking(base, &cfg_end, 0x00);
