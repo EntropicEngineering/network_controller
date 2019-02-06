@@ -30,26 +30,27 @@ bcm_init_spi()
 {
   //set B20 to ALT2 so it's SPI2_PCS0
   port_pin_config_t spi_led_settings = {0};
+  // TODO should there be any pull at all on this pin?
   spi_led_settings.pullSelect = kPORT_PullUp;
   spi_led_settings.mux = kPORT_MuxAlt2;
   CLOCK_EnableClock(kCLOCK_PortB);
   PORT_SetPinConfig(PORTB, 20U, &spi_led_settings);
 
-	cfg.whichCtar = NETWORK_SPI_CTAR;
-	cfg.ctarConfig.baudRate = SPI_BAUDRATE;
-	cfg.ctarConfig.cpol = kDSPI_ClockPolarityActiveHigh;
-	cfg.ctarConfig.cpha = kDSPI_ClockPhaseFirstEdge;
-	cfg.ctarConfig.direction = kDSPI_MsbFirst;
-	cfg.ctarConfig.pcsToSckDelayInNanoSec = 1000000000U / SPI_BAUDRATE;
-	cfg.ctarConfig.lastSckToPcsDelayInNanoSec = 1000000000U / SPI_BAUDRATE;
-	cfg.ctarConfig.betweenTransferDelayInNanoSec = 1000000000U / SPI_BAUDRATE;
+  cfg.whichCtar = NETWORK_SPI_CTAR;
+  cfg.ctarConfig.baudRate = SPI_BAUDRATE;
+  cfg.ctarConfig.cpol = kDSPI_ClockPolarityActiveHigh;
+  cfg.ctarConfig.cpha = kDSPI_ClockPhaseFirstEdge;
+  cfg.ctarConfig.direction = kDSPI_MsbFirst;
+  cfg.ctarConfig.pcsToSckDelayInNanoSec = 1000000000U / SPI_BAUDRATE;
+  cfg.ctarConfig.lastSckToPcsDelayInNanoSec = 1000000000U / SPI_BAUDRATE;
+  cfg.ctarConfig.betweenTransferDelayInNanoSec = 1000000000U / SPI_BAUDRATE;
 
-	cfg.enableContinuousSCK = false;
-	cfg.enableRxFifoOverWrite = false;
-	cfg.enableModifiedTimingFormat = false;
-	cfg.samplePoint = kDSPI_SckToSin0Clock;
+  cfg.enableContinuousSCK = false;
+  cfg.enableRxFifoOverWrite = false;
+  cfg.enableModifiedTimingFormat = false;
+  cfg.samplePoint = kDSPI_SckToSin0Clock;
   // above this line is unconfirmed!
-	cfg.ctarConfig.bitsPerFrame = 8U;
+  cfg.ctarConfig.bitsPerFrame = 8U;
 
   uint32_t srcClock_Hz; // TODO ensure this is 400khz
   srcClock_Hz = CLOCK_GetFreq(DSPI_MASTER_CLK_SRC);
@@ -60,7 +61,7 @@ int
 //normal_read_operation(SPI_Type *base, uint8_t page, uint8_t oset
 //       , uint8_t *result, size_t len)
 normal_read_operation(uint8_t page, uint8_t oset
-                        , uint8_t *result, size_t len)
+                      , uint8_t *result, size_t len)
 
 {
   //page 102, BCM 53128 datasheet
@@ -91,27 +92,31 @@ normal_read_operation(uint8_t page, uint8_t oset
 }
 //TODO initialize these correctly
 dspi_command_data_config_t cfg_start = {
-  .isPcsContinuous = true,
-  .whichCtar = NETWORK_SPI_CTAR,
-  .whichPcs = NETWORK_SPI_PCS,
-  .clearTransferCount = true, // for the first one, this is a transaction
-  .isEndOfQueue = false,
+    .isPcsContinuous = true,
+    .whichCtar = NETWORK_SPI_CTAR,
+    .whichPcs = NETWORK_SPI_PCS,
+    .clearTransferCount = true, // for the first one, this is a transaction
+    .isEndOfQueue = false,
   };
 dspi_command_data_config_t cfg_middle = {
-  .isPcsContinuous = true,
-  .whichCtar = NETWORK_SPI_CTAR,
-  .whichPcs = NETWORK_SPI_PCS,
-  .clearTransferCount = false, // for the first one, this is a transaction
-  .isEndOfQueue = false,
+    .isPcsContinuous = true,
+    .whichCtar = NETWORK_SPI_CTAR,
+    .whichPcs = NETWORK_SPI_PCS,
+    .clearTransferCount = false, // for the first one, this is a transaction
+    .isEndOfQueue = false,
   };
 
 dspi_command_data_config_t cfg_end = {
-  .isPcsContinuous = true,
-  .whichCtar = NETWORK_SPI_CTAR,
-  .whichPcs = NETWORK_SPI_PCS,
-  .clearTransferCount = false, // for the first one, this is a transaction
-  .isEndOfQueue = true,
+    .isPcsContinuous = false, // try to fix failure to continue after cfg_end
+                              // used first time, didn't work
+    .whichCtar = NETWORK_SPI_CTAR,
+    .whichPcs = NETWORK_SPI_PCS,
+    .clearTransferCount = false, // for the first one, this is a transaction
+    .isEndOfQueue = true,
 };
+/* normal_read_command performs a BCM53128 Normal Read Command.
+ * Note that this is distinct from a normal read operation.
+ */
 uint8_t
 normal_read_command(uint8_t bcm_addr)
 {
@@ -122,6 +127,9 @@ normal_read_command(uint8_t bcm_addr)
   DSPI_MasterWriteDataBlocking(base, &cfg_end, 0x00);
   //TODO return a value
   uint8_t spi_status = DSPI_ReadData(SPI2);
+  uint8_t other_inputs[2];
+  other_inputs[0] = DSPI_ReadData(SPI2);
+  other_inputs[1] = DSPI_ReadData(SPI2);
   return spi_status;
 }
 void
@@ -133,6 +141,8 @@ normal_write_command(uint8_t bcm_addr, uint8_t val)
   DSPI_MasterWriteDataBlocking(base, &cfg_middle, bcm_addr);
   DSPI_MasterWriteDataBlocking(base, &cfg_end, val);
 }
+/* performs a Normal Read Command but can return more than one byte.
+ */
 void
 normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len)
 {
