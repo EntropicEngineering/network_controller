@@ -122,17 +122,20 @@ dspi_command_data_config_t cfg_end = {
 uint8_t
 normal_read_command(uint8_t bcm_addr)
 {
-  //TODO write [0x60, bcm_addr, 0x00] to spi, return third received byte
+  // write [0x60, bcm_addr, 0x00] to spi, return third received byte
   //TODO could make only the last one blocking
+  uint8_t spi_read[3];
+  // TODO we need this to clear EOQF, but we might only need to do that because
+  // we set isEndOfQueue in cfg_end, can we not do that?
   base->SR = SPI_SR_EOQF_MASK;
   DSPI_MasterWriteDataBlocking(base, &cfg_start, 0x60);
+  spi_read[0] = DSPI_ReadData(SPI2);
   DSPI_MasterWriteDataBlocking(base, &cfg_middle, bcm_addr);
+  spi_read[1] = DSPI_ReadData(SPI2);
   DSPI_MasterWriteDataBlocking(base, &cfg_end, 0x00);
+  spi_read[2] = DSPI_ReadData(SPI2);
   //TODO return a value
-  uint8_t spi_status = DSPI_ReadData(SPI2);
-  uint8_t other_inputs[2];
-  other_inputs[0] = DSPI_ReadData(SPI2);
-  other_inputs[1] = DSPI_ReadData(SPI2);
+  uint8_t spi_status = spi_read[2];
   return spi_status;
 }
 /* Write val to bcm_addr on the broadcom
