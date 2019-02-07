@@ -60,6 +60,8 @@ bcm_init_spi()
 int
 //normal_read_operation(SPI_Type *base, uint8_t page, uint8_t oset
 //       , uint8_t *result, size_t len)
+/* read len bytes from oset in page, stored in result
+ */
 normal_read_operation(uint8_t page, uint8_t oset
                       , uint8_t *result, size_t len)
 
@@ -133,6 +135,8 @@ normal_read_command(uint8_t bcm_addr)
   other_inputs[1] = DSPI_ReadData(SPI2);
   return spi_status;
 }
+/* Write val to bcm_addr on the broadcom
+ */
 void
 normal_write_command(uint8_t bcm_addr, uint8_t val)
 {
