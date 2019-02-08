@@ -16,4 +16,4 @@ Project.cbp
 debug/
 
 # CLion
-cmake-build-debug/
+cmake-build-debug*/
