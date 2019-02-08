@@ -21,7 +21,7 @@ void normal_read_command_step4(uint8_t bcm_addr);
 SPI_Type *base = SPI2;
 static dspi_master_config_t cfg;
 //CTARs are duplicated per-spi, no clash possibility
-#define NETWORK_SPI_CTAR kDSPI_Ctar1
+#define NETWORK_SPI_CTAR kDSPI_Ctar0
 //SPI2_PCS0 can be D11 or B20, here it's B20
 #define NETWORK_SPI_PCS kDSPI_Pcs0
 #define DSPI_MASTER_CLK_SRC DSPI2_CLK_SRC
