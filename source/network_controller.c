@@ -28,13 +28,12 @@ static dspi_master_config_t cfg;
 void
 bcm_init_spi()
 {
-  //set B20 to ALT2 so it's SPI2_PCS0
-  port_pin_config_t spi_led_settings = {0};
-  // TODO should there be any pull at all on this pin?
-  spi_led_settings.pullSelect = kPORT_PullUp;
-  spi_led_settings.mux = kPORT_MuxAlt2;
+  // SPI2
   CLOCK_EnableClock(kCLOCK_PortB);
-  PORT_SetPinConfig(PORTB, 20U, &spi_led_settings);
+  PORT_SetPinMux(PORTB, 20U, kPORT_MuxAlt2);
+  PORT_SetPinMux(PORTB, 21U, kPORT_MuxAlt2);
+  PORT_SetPinMux(PORTB, 22U, kPORT_MuxAlt2);
+  PORT_SetPinMux(PORTB, 23U, kPORT_MuxAlt2);
 
   cfg.whichCtar = NETWORK_SPI_CTAR;
   cfg.ctarConfig.baudRate = SPI_BAUDRATE;
