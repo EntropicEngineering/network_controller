@@ -130,11 +130,11 @@ normal_read_command(uint8_t bcm_addr)
   // we set isEndOfQueue in cfg_end, can we not do that?
   base->SR = SPI_SR_EOQF_MASK;
   DSPI_MasterWriteDataBlocking(base, &cfg_start, 0x60);
-  spi_read[0] = DSPI_ReadData(SPI2);
+  spi_read[0] = DSPI_ReadData(base);
   DSPI_MasterWriteDataBlocking(base, &cfg_middle, bcm_addr);
-  spi_read[1] = DSPI_ReadData(SPI2);
+  spi_read[1] = DSPI_ReadData(base);
   DSPI_MasterWriteDataBlocking(base, &cfg_end, 0x00);
-  spi_read[2] = DSPI_ReadData(SPI2);
+  spi_read[2] = DSPI_ReadData(base);
   //TODO return a value
   uint8_t spi_status = spi_read[2];
   return spi_status;
@@ -163,7 +163,7 @@ normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len)
   for (unsigned int i = 0; i < len; i++) {
     dspi_command_data_config_t *cfg = i+1==len ? &cfg_end : &cfg_middle;
     DSPI_MasterWriteDataBlocking(base, cfg, bcm_addr);
-    res[i] = DSPI_ReadData(SPI2);
+    res[i] = DSPI_ReadData(base);
   }
 }
 
@@ -183,7 +183,7 @@ normal_read_command_step4(uint8_t bcm_addr)
 
   while (!(spi_status & RACK) && ix < STEP4_RCV_SIZE) {
     DSPI_MasterWriteDataBlocking(base, &cfg_middle, 0x0);
-    spi_status = step4_rcv[ix] = DSPI_ReadData(SPI2);
+    spi_status = step4_rcv[ix] = DSPI_ReadData(base);
     ix++;
   }
 }
