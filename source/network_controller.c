@@ -30,12 +30,14 @@ bcm_init_spi()
 {
   // SPI2
   CLOCK_EnableClock(kCLOCK_PortB);
-  PORT_SetPinMux(PORTB, 20U, kPORT_MuxAlt2);
-  PORT_SetPinMux(PORTB, 21U, kPORT_MuxAlt2);
-  PORT_SetPinMux(PORTB, 22U, kPORT_MuxAlt2);
-  PORT_SetPinMux(PORTB, 23U, kPORT_MuxAlt2);
+  PORT_SetPinMux(PORTB, 20U, kPORT_MuxAlt2); /* SPI2_PCS0 */
+  PORT_SetPinMux(PORTB, 21U, kPORT_MuxAlt2); /* SPI2_SCK  */
+  PORT_SetPinMux(PORTB, 22U, kPORT_MuxAlt2); /* SPI2_SOUT */
+  PORT_SetPinMux(PORTB, 23U, kPORT_MuxAlt2); /* SPI2_SIN  */
 
   cfg.whichCtar = NETWORK_SPI_CTAR;
+  cfg.whichPcs = NETWORK_SPI_PCS;
+  cfg.pcsActiveHighOrLow = kDSPI_PcsActiveLow;
   cfg.ctarConfig.baudRate = SPI_BAUDRATE;
   cfg.ctarConfig.cpol = kDSPI_ClockPolarityActiveHigh;
   cfg.ctarConfig.cpha = kDSPI_ClockPhaseFirstEdge;
