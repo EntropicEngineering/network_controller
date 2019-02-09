@@ -17,7 +17,7 @@ void normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len);
 void normal_read_command_step4(uint8_t bcm_addr);
 
 //TODO
-#define SPI_BAUDRATE 400000
+#define SPI_BAUDRATE 24000000
 SPI_Type *base = SPI2;
 static dspi_master_config_t cfg;
 //CTARs are duplicated per-spi, no clash possibility
