@@ -39,7 +39,7 @@ bcm_init_spi()
   cfg.whichPcs = NETWORK_SPI_PCS;
   cfg.pcsActiveHighOrLow = kDSPI_PcsActiveLow;
   cfg.ctarConfig.baudRate = SPI_BAUDRATE;
-  cfg.ctarConfig.cpol = kDSPI_ClockPolarityActiveHigh;
+  cfg.ctarConfig.cpol = kDSPI_ClockPolarityActiveLow;
   cfg.ctarConfig.cpha = kDSPI_ClockPhaseFirstEdge;
   cfg.ctarConfig.direction = kDSPI_MsbFirst;
   cfg.ctarConfig.pcsToSckDelayInNanoSec = 1000000000U / SPI_BAUDRATE;
