@@ -14,7 +14,7 @@
 uint8_t normal_read_command(uint8_t bcm_addr);
 void normal_write_command(uint8_t bcm_addr, uint8_t val);
 void normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len);
-void normal_read_command_step4(uint8_t bcm_addr);
+int normal_read_command_step4(uint8_t bcm_addr);
 
 //TODO
 #define SPI_BAUDRATE 24000000
@@ -86,7 +86,12 @@ normal_read_operation(uint8_t page, uint8_t oset
   normal_read_command(0x12);
   //step4:
   //step4 needs a custom loop because it just keeps clocking
-  normal_read_command_step4(0xfe);
+  //TODO this can fail, it should return a value that can fail
+  int got_rack = normal_read_command_step4(0xfe);
+  if (!got_rack) {
+    normal_write_command(0xff, page);
+    goto err;
+  }
   //step5:
   normal_read_command_buf(0xf0, result, len);
   return 0;
@@ -167,7 +172,7 @@ normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len)
   }
 }
 
-void
+int
 normal_read_command_step4(uint8_t bcm_addr)
 {
   //TODO write [0x60, addr, 0x00] to spi
@@ -179,13 +184,17 @@ normal_read_command_step4(uint8_t bcm_addr)
   uint8_t spi_status = 0;
   int ix = 0;
   #define STEP4_RCV_SIZE 20
-  uint8_t step4_rcv[20];
+  uint8_t step4_rcv[20] = {0};
 
-  while (!(spi_status & RACK) && ix < STEP4_RCV_SIZE) {
+  while (ix < STEP4_RCV_SIZE) {
     DSPI_MasterWriteDataBlocking(base, &cfg_middle, 0x0);
     spi_status = step4_rcv[ix] = DSPI_ReadData(base);
     ix++;
+    if (spi_status & RACK) {
+      return 1;
+    }
   }
+  return 0;
 }
 
 /* Write the bytes in the buffer result to the bcm location oset in page.
