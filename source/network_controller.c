@@ -241,6 +241,7 @@ struct macaddr {uint8_t addr[6];};
 int last_mac(unsigned int port, struct macaddr *m);
 int last_mac(unsigned int port, struct macaddr *m)
 {
+  //TODO this fetches MSB first in the array. For normal order reverse it.
   if (port > 8u) {
     memset(m, 0, sizeof(struct macaddr));
     return -2;
