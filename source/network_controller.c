@@ -11,6 +11,9 @@
 #define RACK (1u<<5)
 #define SPIF (1u<<7)
 
+// TODO noticed that some functions don't properly handle their responses, check
+// that functions handle their responses
+
 uint8_t normal_read_command(uint8_t bcm_addr);
 void normal_write_command(uint8_t bcm_addr, uint8_t val);
 void normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len);
@@ -122,6 +125,12 @@ dspi_command_data_config_t cfg_end = {
     .clearTransferCount = false, // for the first one, this is a transaction
     .isEndOfQueue = true,
 };
+static inline uint32_t
+dspi_write(SPI_Type *base, dspi_command_data_config_t *cfg, uint16_t val)
+{
+  DSPI_MasterWriteDataBlocking(base, cfg, val);
+  return DSPI_ReadData(base);
+}
 /* normal_read_command performs a BCM53128 Normal Read Command.
  * Note that this is distinct from a normal read operation.
  */
@@ -134,12 +143,10 @@ normal_read_command(uint8_t bcm_addr)
   // TODO we need this to clear EOQF, but we might only need to do that because
   // we set isEndOfQueue in cfg_end, can we not do that?
   base->SR = SPI_SR_EOQF_MASK;
-  DSPI_MasterWriteDataBlocking(base, &cfg_start, 0x60);
-  spi_read[0] = DSPI_ReadData(base);
-  DSPI_MasterWriteDataBlocking(base, &cfg_middle, bcm_addr);
-  spi_read[1] = DSPI_ReadData(base);
-  DSPI_MasterWriteDataBlocking(base, &cfg_end, 0x00);
-  spi_read[2] = DSPI_ReadData(base);
+  spi_read[0] = dspi_write(base, &cfg_start, 0x60);
+  spi_read[1] = dspi_write(base, &cfg_middle, bcm_addr);
+  spi_read[2] = dspi_write(base, &cfg_end, 0x00);
+
   //TODO return a value
   uint8_t spi_status = spi_read[2];
   return spi_status;
@@ -150,10 +157,13 @@ void
 normal_write_command(uint8_t bcm_addr, uint8_t val)
 {
   //TODO write [0x61, bcm_addr, val] to spi
+  // TODO we need this to clear EOQF, but we might only need to do that because
+  // we set isEndOfQueue in cfg_end, can we not do that?
+  base->SR = SPI_SR_EOQF_MASK;
   //TODO could make only the last one blocking?
-  DSPI_MasterWriteDataBlocking(base, &cfg_start, 0x61);
-  DSPI_MasterWriteDataBlocking(base, &cfg_middle, bcm_addr);
-  DSPI_MasterWriteDataBlocking(base, &cfg_end, val);
+  dspi_write(base, &cfg_start, 0x61);
+  dspi_write(base, &cfg_middle, bcm_addr);
+  dspi_write(base, &cfg_end, val);
 }
 /* performs a Normal Read Command but can return more than one byte.
  */
@@ -163,12 +173,15 @@ normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len)
   //TODO write [0x60, bcm_addr] to spi, then without losing chip select
   //TODO write len 0's to spi, return received data from that
 
-  DSPI_MasterWriteDataBlocking(base, &cfg_start, 0x60);
-  DSPI_MasterWriteDataBlocking(base, &cfg_middle, bcm_addr);
+  // TODO we need this to clear EOQF, but we might only need to do that because
+  // we set isEndOfQueue in cfg_end, can we not do that?
+  base->SR = SPI_SR_EOQF_MASK;
+  dspi_write(base, &cfg_start, 0x60);
+  dspi_write(base, &cfg_middle, bcm_addr);
   for (unsigned int i = 0; i < len; i++) {
     dspi_command_data_config_t *cfg = i+1==len ? &cfg_end : &cfg_middle;
-    DSPI_MasterWriteDataBlocking(base, cfg, bcm_addr);
-    res[i] = DSPI_ReadData(base);
+    //TODO is it correct to write bcm_addr here?
+    res[i] = dspi_write(base, cfg, bcm_addr);
   }
 }
 
@@ -176,19 +189,21 @@ int
 normal_read_command_step4(uint8_t bcm_addr)
 {
   //TODO write [0x60, addr, 0x00] to spi
+  // TODO we need this to clear EOQF, but we might only need to do that because
+  // we set isEndOfQueue in cfg_end, can we not do that?
+  base->SR = SPI_SR_EOQF_MASK;
   //TODO let status = last received byte. if status & RACK return successfully
   //TODO if not status & RACK transmit another byte and repeat, up to timeout
   //TODO timeout is 20 bytes tried
-  DSPI_MasterWriteDataBlocking(base, &cfg_start, 0x60);
-  DSPI_MasterWriteDataBlocking(base, &cfg_middle, bcm_addr);
+  dspi_write(base, &cfg_start, 0x60);
+  dspi_write(base, &cfg_middle, bcm_addr);
   uint8_t spi_status = 0;
   int ix = 0;
   #define STEP4_RCV_SIZE 20
   uint8_t step4_rcv[20] = {0};
 
   while (ix < STEP4_RCV_SIZE) {
-    DSPI_MasterWriteDataBlocking(base, &cfg_middle, 0x0);
-    spi_status = step4_rcv[ix] = DSPI_ReadData(base);
+    spi_status = step4_rcv[ix] = dspi_write(base, &cfg_middle, 0x0);
     ix++;
     if (spi_status & RACK) {
       return 1;
@@ -259,9 +274,6 @@ int main(void)
   for (;;) {
     //main must not exit
     //get status
-    uint8_t statbuf[2] = {0};
-    normal_read_operation(0x10, 0x12, statbuf, 2);
-
     //Serial.printf("getting link status summary\n");
     //get mac address (see datasheet for which)
     //uint8_t macbuf[BCM_53128_STATUS_LAST_SOURCE_ADDRESS_PORT_2.len] = {0};
@@ -273,6 +285,7 @@ int main(void)
       rets[i] = last_mac(i, &macs[i]);
     }
 
-    //TODO pause to inspect values in gdb
+    uint8_t statbuf[2] = {0};
+    normal_read_operation(0x10, 0x12, statbuf, 2);
   }
 }
