@@ -60,15 +60,11 @@ bcm_init_spi()
   srcClock_Hz = CLOCK_GetFreq(DSPI_MASTER_CLK_SRC);
   DSPI_MasterInit(base, &cfg, srcClock_Hz);
 }
-//TODO (in progress) rather than passing spi base around just #define it somewhere
 int
-//normal_read_operation(SPI_Type *base, uint8_t page, uint8_t oset
-//       , uint8_t *result, size_t len)
 /* read len bytes from oset in page, stored in result
  */
 normal_read_operation(uint8_t page, uint8_t oset
                       , uint8_t *result, size_t len)
-
 {
   //page 102, BCM 53128 datasheet
   int spif_timeout = 0;
@@ -118,8 +114,7 @@ dspi_command_data_config_t cfg_middle = {
   };
 
 dspi_command_data_config_t cfg_end = {
-    .isPcsContinuous = false, // try to fix failure to continue after cfg_end
-                              // used first time, didn't work
+    .isPcsContinuous = false,
     .whichCtar = NETWORK_SPI_CTAR,
     .whichPcs = NETWORK_SPI_PCS,
     .clearTransferCount = false, // for the first one, this is a transaction
@@ -147,7 +142,6 @@ normal_read_command(uint8_t bcm_addr)
   spi_read[1] = dspi_write(base, &cfg_middle, bcm_addr);
   spi_read[2] = dspi_write(base, &cfg_end, 0x00);
 
-  //TODO return a value
   uint8_t spi_status = spi_read[2];
   return spi_status;
 }
