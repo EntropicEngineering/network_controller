@@ -43,7 +43,7 @@ bcm_init_spi()
   cfg.pcsActiveHighOrLow = kDSPI_PcsActiveLow;
   cfg.ctarConfig.baudRate = SPI_BAUDRATE;
   cfg.ctarConfig.cpol = kDSPI_ClockPolarityActiveLow;
-  cfg.ctarConfig.cpha = kDSPI_ClockPhaseFirstEdge;
+  cfg.ctarConfig.cpha = kDSPI_ClockPhaseSecondEdge;
   cfg.ctarConfig.direction = kDSPI_MsbFirst;
   cfg.ctarConfig.pcsToSckDelayInNanoSec = 1000000000U / SPI_BAUDRATE;
   cfg.ctarConfig.lastSckToPcsDelayInNanoSec = 1000000000U / SPI_BAUDRATE;
@@ -79,11 +79,12 @@ normal_read_operation(uint8_t page, uint8_t oset
   uint8_t spi_status;
  step1:
   spi_status = normal_read_command(0xfe);
-  if (!(spi_status & SPIF)) {
+  if ((spi_status & SPIF)) {
     if (++spif_timeout < spif_timeout_limit) {
       delay_a_bit();
       goto step1;
     } else {
+      //TODO supposed to do a normal write here
       goto err;
     }
   }
@@ -188,8 +189,7 @@ normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len)
   dspi_write(base, &cfg_middle, bcm_addr);
   for (unsigned int i = 0; i < len; i++) {
     dspi_command_data_config_t *cfg = i+1==len ? &cfg_end : &cfg_middle;
-    //TODO is it correct to write bcm_addr here?
-    res[i] = dspi_write(base, cfg, bcm_addr);
+    res[i] = dspi_write(base, cfg, 0x00);
   }
 }
 
@@ -221,6 +221,8 @@ normal_read_command_step4(uint8_t bcm_addr)
       break;
     }
   } while (++ix < STEP4_RCV_SIZE);
+  //clock dummy byte to reset Chip Select
+  dspi_write(base, &cfg_end, 0x00);
   uint32_t sr_on_exit = base->SR;
   int RXDF = sr_on_exit & SPI_SR_RFDF_MASK;
   return retval;
@@ -292,6 +294,8 @@ int main(void)
     //Serial.printf("getting link status summary\n");
     //get mac address (see datasheet for which)
     //uint8_t macbuf[BCM_53128_STATUS_LAST_SOURCE_ADDRESS_PORT_2.len] = {0};
+    uint8_t statbuf[2] = {0};
+    normal_read_operation(0x10, 0x12, statbuf, 2);
 
     struct macaddr macs[8] = {0};
     int rets[8] = {0};
@@ -300,7 +304,5 @@ int main(void)
       rets[i] = last_mac(i, &macs[i]);
     }
 
-    uint8_t statbuf[2] = {0};
-    normal_read_operation(0x10, 0x12, statbuf, 2);
   }
 }
