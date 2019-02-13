@@ -60,13 +60,20 @@ bcm_init_spi()
   srcClock_Hz = CLOCK_GetFreq(DSPI_MASTER_CLK_SRC);
   DSPI_MasterInit(base, &cfg, srcClock_Hz);
 }
+#define DELAY_AMOUNT 300
+void
+delay_a_bit(void)
+{
+  for (int i = 0; i <DELAY_AMOUNT;i++)
+     __asm("NOP");
+}
 int
-/* read len bytes from oset in page, stored in result
+/* read len bytes from oset in page, stored in result. Page 100 BCM53128
+ * datasheet
  */
 normal_read_operation(uint8_t page, uint8_t oset
                       , uint8_t *result, size_t len)
 {
-  //page 102, BCM 53128 datasheet
   int spif_timeout = 0;
   const int spif_timeout_limit = 10;
   uint8_t spi_status;
@@ -74,15 +81,19 @@ normal_read_operation(uint8_t page, uint8_t oset
   spi_status = normal_read_command(0xfe);
   if (!(spi_status & SPIF)) {
     if (++spif_timeout < spif_timeout_limit) {
+      delay_a_bit();
       goto step1;
     } else {
       goto err;
     }
   }
+  delay_a_bit();
   //step2:
   normal_write_command(0xff, page);
+  delay_a_bit();
   //step3:
   normal_read_command(0x12);
+  delay_a_bit();
   //step4:
   //step4 needs a custom loop because it just keeps clocking
   //TODO this can fail, it should return a value that can fail
@@ -91,6 +102,7 @@ normal_read_operation(uint8_t page, uint8_t oset
     normal_write_command(0xff, page);
     goto err;
   }
+  delay_a_bit();
   //step5:
   normal_read_command_buf(0xf0, result, len);
   return 0;
@@ -118,15 +130,18 @@ dspi_command_data_config_t cfg_end = {
     .whichCtar = NETWORK_SPI_CTAR,
     .whichPcs = NETWORK_SPI_PCS,
     .clearTransferCount = false, // for the first one, this is a transaction
-    .isEndOfQueue = true,
+    .isEndOfQueue = true, // TODO try removing this and all the base->SR writes
 };
+/* Write one byte to the given SPI, returning the response. Ensures the FIFO
+ * doesn't get out of sync.
+ */
 static inline uint32_t
 dspi_write(SPI_Type *base, dspi_command_data_config_t *cfg, uint16_t val)
 {
   DSPI_MasterWriteDataBlocking(base, cfg, val);
   return DSPI_ReadData(base);
 }
-/* normal_read_command performs a BCM53128 Normal Read Command.
+/* normal_read_command performs a BCM53128 Normal Read Command. Page 102 et al
  * Note that this is distinct from a normal read operation.
  */
 uint8_t
@@ -142,8 +157,7 @@ normal_read_command(uint8_t bcm_addr)
   spi_read[1] = dspi_write(base, &cfg_middle, bcm_addr);
   spi_read[2] = dspi_write(base, &cfg_end, 0x00);
 
-  uint8_t spi_status = spi_read[2];
-  return spi_status;
+  return spi_read[2];
 }
 /* Write val to bcm_addr on the broadcom
  */
@@ -185,25 +199,31 @@ normal_read_command_step4(uint8_t bcm_addr)
   //TODO write [0x60, addr, 0x00] to spi
   // TODO we need this to clear EOQF, but we might only need to do that because
   // we set isEndOfQueue in cfg_end, can we not do that?
+
   base->SR = SPI_SR_EOQF_MASK;
+  uint32_t sr_on_entry = base->SR;
   //TODO let status = last received byte. if status & RACK return successfully
   //TODO if not status & RACK transmit another byte and repeat, up to timeout
   //TODO timeout is 20 bytes tried
-  dspi_write(base, &cfg_start, 0x60);
-  dspi_write(base, &cfg_middle, bcm_addr);
+  int rcvpre[2] = {0};
+  rcvpre[0] = dspi_write(base, &cfg_start, 0x60);
+  rcvpre[1] = dspi_write(base, &cfg_middle, bcm_addr);
   uint8_t spi_status = 0;
   int ix = 0;
   #define STEP4_RCV_SIZE 20
   uint8_t step4_rcv[20] = {0};
 
-  while (ix < STEP4_RCV_SIZE) {
+  int retval = 0;
+  do { // dowhile for debugging purposes
     spi_status = step4_rcv[ix] = dspi_write(base, &cfg_middle, 0x0);
-    ix++;
     if (spi_status & RACK) {
-      return 1;
+      retval = 1;
+      break;
     }
-  }
-  return 0;
+  } while (++ix < STEP4_RCV_SIZE);
+  uint32_t sr_on_exit = base->SR;
+  int RXDF = sr_on_exit & SPI_SR_RFDF_MASK;
+  return retval;
 }
 
 /* Write the bytes in the buffer result to the bcm location oset in page.
@@ -273,7 +293,7 @@ int main(void)
     //get mac address (see datasheet for which)
     //uint8_t macbuf[BCM_53128_STATUS_LAST_SOURCE_ADDRESS_PORT_2.len] = {0};
 
-    struct macaddr macs[8];
+    struct macaddr macs[8] = {0};
     int rets[8] = {0};
 
     for (int i = 0; i < 8; i++) {
