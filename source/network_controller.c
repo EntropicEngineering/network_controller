@@ -84,7 +84,7 @@ normal_read_operation(uint8_t page, uint8_t oset
       delay_a_bit();
       goto step1;
     } else {
-      //TODO supposed to do a normal write here
+      normal_write_command(0xff, page);
       goto err;
     }
   }
@@ -97,7 +97,6 @@ normal_read_operation(uint8_t page, uint8_t oset
   delay_a_bit();
   //step4:
   //step4 needs a custom loop because it just keeps clocking
-  //TODO this can fail, it should return a value that can fail
   int got_rack = normal_read_command_step4(0xfe);
   if (!got_rack) {
     normal_write_command(0xff, page);
@@ -165,7 +164,7 @@ normal_read_command(uint8_t bcm_addr)
 void
 normal_write_command(uint8_t bcm_addr, uint8_t val)
 {
-  //TODO write [0x61, bcm_addr, val] to spi
+  // write [0x61, bcm_addr, val] to spi
   // TODO we need this to clear EOQF, but we might only need to do that because
   // we set isEndOfQueue in cfg_end, can we not do that?
   base->SR = SPI_SR_EOQF_MASK;
@@ -179,8 +178,8 @@ normal_write_command(uint8_t bcm_addr, uint8_t val)
 void
 normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len)
 {
-  //TODO write [0x60, bcm_addr] to spi, then without losing chip select
-  //TODO write len 0's to spi, return received data from that
+  // write [0x60, bcm_addr] to spi, then without losing chip select
+  // write len 0's to spi, return received data from that
 
   // TODO we need this to clear EOQF, but we might only need to do that because
   // we set isEndOfQueue in cfg_end, can we not do that?
@@ -196,7 +195,7 @@ normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len)
 int
 normal_read_command_step4(uint8_t bcm_addr)
 {
-  //TODO write [0x60, addr, 0x00] to spi
+  // write [0x60, addr, 0x00] to spi
   // TODO we need this to clear EOQF, but we might only need to do that because
   // we set isEndOfQueue in cfg_end, can we not do that?
 
