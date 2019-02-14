@@ -93,7 +93,7 @@ normal_read_operation(uint8_t page, uint8_t oset
   normal_write_command(0xff, page);
   delay_a_bit();
   //step3:
-  normal_read_command(0x12);
+  normal_read_command(oset);
   delay_a_bit();
   //step4:
   //step4 needs a custom loop because it just keeps clocking
