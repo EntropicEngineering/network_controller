@@ -228,14 +228,50 @@ normal_read_command_step4(uint8_t bcm_addr)
   return retval;
 }
 
+int
+normal_write_command_buf(int oset, uint8_t *buf, size_t len)
+{
+  // TODO we need this to clear EOQF, but we might only need to do that because
+  // we set isEndOfQueue in cfg_end, can we not do that?
+  base->SR = SPI_SR_EOQF_MASK;
+  dspi_write(base, &cfg_start, 0x61);
+  dspi_write(base, &cfg_middle, oset);
+  for (unsigned int i = 0; i < len; i++) {
+    dspi_command_data_config_t *cfg = i+1==len ? &cfg_end : &cfg_middle;
+    dspi_write(base, cfg, buf[i]);
+  }
+}
+
 /* Write the bytes in the buffer result to the bcm location oset in page.
  */
 int
 normal_write_operation(uint8_t page, uint8_t oset
-                      , uint8_t *result, size_t len)
+                      , uint8_t *buf, size_t len)
 {
-  //TODO implement normal_write_operation
-  assert(0);
+  /* Normal Write operation consists of 3 transactions (three SS operations)
+   * 1. Issue a Normal Read Command (opcode = 0x60) to poll the SPIF bit in the
+   *    SPI Status register (0xFE) to determine the operation can start.
+   * 2. Issue a Normal Write command (opcode = 0x61) to setup the accessed
+   *    register page value into the page register (0xFF).
+   * 3. Issue a Normal Write command (opcode = 0x61) to setup the accessed
+   *    register address value, followed by the write content starting from a
+   *    lower byte.
+   */
+  int spi_status_times = 0;
+  const int spi_status_timeout = 20;
+  int spi_status = 0;
+ step1:
+  spi_status = normal_read_command(0xfe);
+  if (spi_status & SPIF) {
+    if (spi_status_times++ > spi_status_timeout) {
+      normal_write_command(0xff, page);
+      return -1;
+    }
+    goto step1;
+  }
+  normal_write_command(0xff, page);
+  int ret3 = normal_write_command_buf(oset, buf, len);
+  return 0;
 }
 
 typedef struct {uint8_t page; uint8_t reg; uint8_t len;} bcm_reg;
