@@ -11,15 +11,17 @@
 #define RACK (1u<<5)
 #define SPIF (1u<<7)
 
-// TODO noticed that some functions don't properly handle their responses, check
-// that functions handle their responses
+//TODO should be possible to not set isEndOfQueue and then not have to set SR
+// all the time
+
+//TODO integrate this code with datagram API for minimal spi datagram -> switch
+// port control example
 
 uint8_t normal_read_command(uint8_t bcm_addr);
 void normal_write_command(uint8_t bcm_addr, uint8_t val);
 void normal_read_command_buf(uint8_t bcm_addr, uint8_t *res, size_t len);
 int normal_read_command_step4(uint8_t bcm_addr);
 
-//TODO
 #define SPI_BAUDRATE 24000000
 SPI_Type *base = SPI2;
 static dspi_master_config_t cfg;
@@ -301,7 +303,7 @@ int last_mac(unsigned int port, struct macaddr *m)
 }
 
 int
-set_port_enables(int port, bool txen, bool rxen)
+set_port_enables(int port, bool txdis, bool rxdis)
 {
   if (port > 7) {
     return -2;
@@ -309,10 +311,11 @@ set_port_enables(int port, bool txen, bool rxen)
   uint8_t port_ctl_status;
   int readret = normal_read_operation(0x00, port, &port_ctl_status, 1);
   //TODO abort if read failed
-  port_ctl_status &= 0xfc | ((!!txen) << 1) | (!!rxen);
+  port_ctl_status &= 0x00 | ((!!txdis) << 1) | (!!rxdis);
   return normal_write_operation(0x00, port, &port_ctl_status, 1);
 }
 
+void break_on_me(void) {}; /* debugging breakpoint */
 int main(void)
 {
   BOARD_BootClockRUN();
@@ -339,5 +342,21 @@ int main(void)
       rets[i] = last_mac(i, &macs[i]);
     }
 
+    uint8_t link_status_summary = 0;
+    normal_read_operation(0x01, 0x00, &link_status_summary, 1);
+
+    uint8_t ndio_port = 0;
+    normal_read_operation(0, 0x78, &ndio_port, 1);
+
+    uint8_t writeme = 0x00; //0x4a;
+    normal_write_operation(0x00, 0x58, &writeme, 1);
+    //set_port_enables(0, 1, 1);
+
+    uint8_t led_buf_1[2] = {0x01, 0xff};
+    uint8_t led_buf_2[2] = {0x01, 0xff};
+    normal_write_operation(0x00, 0x1a, led_buf_1, 2);
+    normal_write_operation(0x00, 0x18, led_buf_2, 2);
+
+    break_on_me(); /* breakpoint target */
   }
 }
