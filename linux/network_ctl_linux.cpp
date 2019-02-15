@@ -1,6 +1,7 @@
 #include <thread>
 #include "spi_datagram.h"
 
+void cli_task(void);
 //TODO don't duplicate
 enum optype {
   READ = 1,
@@ -46,7 +47,7 @@ cli_task(void)
   uint8_t b_LINK_STATUS_CHANGE[4] = {READ, 0x01, 0x02, 2};
 
   for (;;) {
-  switch (getc()) {
+  switch (getc(stdin)) {
   case '0':
     send_message(b_READ_MAC_0, 4);
     break;
