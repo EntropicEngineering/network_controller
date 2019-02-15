@@ -7,6 +7,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "fsl_device_registers.h"
+#include "fsl_port.h"
+#include "fsl_gpio.h"
 
 #include "spi_proto.h"
 #include "spi_proto_slave.h"
@@ -72,8 +75,20 @@ bcm_ctl_task(void *pvParams)
   }
 }
 
+void pins_init(void)
+{
+    CLOCK_EnableClock(kCLOCK_PortD);
+    /* SPI on D0-D3 */
+    PORT_SetPinMux(PORTD, 0U, kPORT_MuxAlt2);
+    PORT_SetPinMux(PORTD, 1U, kPORT_MuxAlt2);
+    PORT_SetPinMux(PORTD, 2U, kPORT_MuxAlt2);
+    PORT_SetPinMux(PORTD, 3U, kPORT_MuxAlt2);
+
+}
+
 int main(void)
 {
+  pins_init();
   BOARD_BootClockRUN();
   BOARD_InitDebugConsole();
 
