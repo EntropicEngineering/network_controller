@@ -148,11 +148,7 @@ spi_edma_task(void *pvParams)
 		, &dspiEdmaSlaveTxDataToTxRegHandle
 		);
 
-	uint8_t blank_msg[SPI_MSG_PAYLOAD_LEN];
 	for (;;) {
-		if (p.proto.num_unsent == 0) {
-			slave_send_message(p, blank_msg, 0); // TODO in theory middle arg can be NULL
-		}
 		slave_do_tick(p);
 		slaveXfer.txData = slaveTxData;
 		slaveXfer.rxData = slaveRxData;
