@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
   std::thread cli(cli_task);
 
   //TODO loop or someting
+  for (;;){}
 
 }
 
