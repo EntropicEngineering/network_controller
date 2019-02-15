@@ -1,3 +1,6 @@
 [submodule "k66f-reqs"]
 	path = k66f-reqs
 	url = https://github.com/EntropicEngineering/k66f-reqs.git
+[submodule "spi_proto"]
+	path = spi_proto
+	url = https://github.com/AdvancedModularManikin/spi_proto

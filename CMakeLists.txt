@@ -387,7 +387,7 @@ set(K66F_STARTUP
 "${ProjDirPath}/k66f-reqs/startup/system_MK66F18.h"
 )
 
-add_executable(network_controller.elf
+add_executable(bcm53128.elf
 ${BOARD_CFG}
 ${FSL_DRIVERS}
 ${FREERTOS_SOURCE}
@@ -395,6 +395,27 @@ ${SPI_PROTO_SOURCES}
 ${K66F_STARTUP}
 "${ProjDirPath}/source/FreeRTOSConfig.h"
 "${ProjDirPath}/source/network_controller.c"
+"${ProjDirPath}/source/bcm53128.c"
+"${ProjDirPath}/k66f-reqs/utilities/fsl_debug_console.c"
+"${ProjDirPath}/k66f-reqs/utilities/fsl_debug_console.h"
+"${ProjDirPath}/k66f-reqs/utilities/fsl_sbrk.c"
+)
+
+add_executable(network_ctl_spi_datagram.elf
+${BOARD_CFG}
+${FSL_DRIVERS}
+${FREERTOS_SOURCE}
+${SPI_PROTO_SOURCES}
+${K66F_STARTUP}
+"${ProjDirPath}/source/FreeRTOSConfig.h"
+"${ProjDirPath}/source/network_controller.c"
+"${ProjDirPath}/source/network_ctl_spi_datagram.cpp"
+"${ProjDirPath}/source/spi_edma_task.cpp"
+"${ProjDirPath}/source/spi_proto_slave.cpp"
+
+"${ProjDirPath}/spi_proto/src/spi_proto.c"
+"${ProjDirPath}/spi_proto/src/crc16.c"
+
 "${ProjDirPath}/k66f-reqs/utilities/fsl_debug_console.c"
 "${ProjDirPath}/k66f-reqs/utilities/fsl_debug_console.h"
 "${ProjDirPath}/k66f-reqs/utilities/fsl_sbrk.c"
@@ -407,22 +428,41 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -T${ProjDirPat
 
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -T${ProjDirPath}/MK66FN2M0xxx18_flash.ld -static")
 
-TARGET_LINK_LIBRARIES(network_controller.elf -Wl,--start-group)
-target_link_libraries(network_controller.elf debug m)
+TARGET_LINK_LIBRARIES(bcm53128.elf -Wl,--start-group)
+target_link_libraries(bcm53128.elf debug m)
 
-target_link_libraries(network_controller.elf debug c)
+target_link_libraries(bcm53128.elf debug c)
 
-target_link_libraries(network_controller.elf debug gcc)
+target_link_libraries(bcm53128.elf debug gcc)
 
-target_link_libraries(network_controller.elf debug nosys)
+target_link_libraries(bcm53128.elf debug nosys)
 
-target_link_libraries(network_controller.elf optimized m)
+target_link_libraries(bcm53128.elf optimized m)
 
-target_link_libraries(network_controller.elf optimized c)
+target_link_libraries(bcm53128.elf optimized c)
 
-target_link_libraries(network_controller.elf optimized gcc)
+target_link_libraries(bcm53128.elf optimized gcc)
 
-target_link_libraries(network_controller.elf optimized nosys)
+target_link_libraries(bcm53128.elf optimized nosys)
 
-TARGET_LINK_LIBRARIES(network_controller.elf -Wl,--end-group)
+TARGET_LINK_LIBRARIES(bcm53128.elf -Wl,--end-group)
+
+TARGET_LINK_LIBRARIES(network_ctl_spi_datagram.elf -Wl,--start-group)
+target_link_libraries(network_ctl_spi_datagram.elf debug m)
+
+target_link_libraries(network_ctl_spi_datagram.elf debug c)
+
+target_link_libraries(network_ctl_spi_datagram.elf debug gcc)
+
+target_link_libraries(network_ctl_spi_datagram.elf debug nosys)
+
+target_link_libraries(network_ctl_spi_datagram.elf optimized m)
+
+target_link_libraries(network_ctl_spi_datagram.elf optimized c)
+
+target_link_libraries(network_ctl_spi_datagram.elf optimized gcc)
+
+target_link_libraries(network_ctl_spi_datagram.elf optimized nosys)
+
+TARGET_LINK_LIBRARIES(network_ctl_spi_datagram.elf -Wl,--end-group)
 
