@@ -1,0 +1,5 @@
+rename enP2p1s0=WAN
+auto WAN
+iface WAN inet dhcp
+  pre-up iptables-restore < /etc/iptables/rules.v4
+iface WAN inet6 auto

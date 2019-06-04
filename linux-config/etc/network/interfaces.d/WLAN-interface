@@ -1,0 +1,5 @@
+rename wlp1s0=WLAN
+auto WLAN
+iface WLAN inet static
+  address 192.168.0.1/16
+  pre-up iptables-restore < /etc/iptables/rules.v4

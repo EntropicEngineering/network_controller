@@ -1,0 +1,4 @@
+rename enP1p1s0=LAN
+auto LAN
+iface LAN inet static
+  address 172.16.0.1/12
