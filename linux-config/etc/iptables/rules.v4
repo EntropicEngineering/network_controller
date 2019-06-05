@@ -1,19 +1,24 @@
 *nat
+# SNAT for internal networks
 -A POSTROUTING -o WAN -j MASQUERADE
 COMMIT
 
 *filter
+# Allow machine-local communication
 -A INPUT -i lo -j ACCEPT
-# Allow ssh, so that we do not lock ourselves out
+# Allow access via internal wired or wireless connection
+-A INPUT -i LAN -j ACCEPT
+-A INPUT -i WLAN -j ACCEPT
+# Allow outside ssh
 -A INPUT -i WAN -p tcp -m tcp --dport 22 -j ACCEPT
-# Allow incoming traffic for the outgoing connections to router
--A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+# Allow incoming traffic for the outgoing connections from router
+-A INPUT -i WAN -m state --state RELATED,ESTABLISHED -j ACCEPT
 # Block everything else incoming to router
 -A INPUT -i WAN -j DROP
 
-## Forward traffic between internal wired & wirless networks
-#-A FORWARD -i LAN -o WLAN -j ACCEPT
-#-A FORWARD -i WLAN -o LAN -j ACCEPT
-## Allow incoming traffic for the outgoing connections to rest of network
-#-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-#COMMIT
+# Forward traffic between internal wired & wirless networks
+-A FORWARD -i LAN -j ACCEPT
+-A FORWARD -i WLAN -j ACCEPT
+# Allow incoming traffic for the outgoing connections from rest of network
+-A FORWARD -i WAN -m state --state RELATED,ESTABLISHED -j ACCEPT
+COMMIT

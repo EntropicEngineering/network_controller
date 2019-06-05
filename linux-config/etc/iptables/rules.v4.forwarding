@@ -1,7 +1,0 @@
-*filter
-# Forward traffic between internal wired & wirless networks
--A FORWARD -i LAN -o WLAN -j ACCEPT
--A FORWARD -i WLAN -o LAN -j ACCEPT
-# Allow incoming traffic for the outgoing connections to rest of network
--A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-COMMIT
