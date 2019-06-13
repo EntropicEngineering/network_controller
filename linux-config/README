@@ -10,6 +10,7 @@ nmcli con mod AMMWLAN wifi-sec.psk "lift-repeated-manikin"
 nmcli con mod AMMWLAN 802-11-wireless.mode ap
 nmcli con mod AMMWLAN ipv4.method manual ipv4.addresses 192.168.0.1/16
 nmcli con up AMMWLAN
+service nftables start
 
 nmcli dev  -> look to see connections are correct
 
