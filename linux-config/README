@@ -1,0 +1,16 @@
+To configure the AMM Router
+sudo apt-mark hold firmware-atheros lxqt* liblxqt* (to prevent driver and GUI crashes)
+sudo apt update 
+sudo apt upgrade
+sudo su
+ip link set dev WLAN down
+nmcli dev wifi set WLAN managed yes
+nmcli con add type wifi ifname WLAN con-name AMMWLAN autoconnect yes  ssid "AMM"
+nmcli con mod AMMWLAN wifi-sec.key-mgmt wpa-psk 
+nmcli con mod AMMWLAN 802-11-wireless.mode ap
+nmcli con mod AMMWLAN ipv4.method manual ipv4.addresses 192.168.0.1/16
+nmcli con up AMMWLAN
+
+Potentially needed if con up doesn't work after reboot
+UUID=$(grep uuid /etc/NetworkManager/system-connections/*NAME OF CONNECTION*/ | cut -d= -f2)
+nmcli con up uuid $UUID

@@ -1,0 +1,21 @@
+#Intel 82574 Firmware
+#Foo is first 128 bytes of intel firmware image. 0x0 to 0x7F 
+#Sum of first 128 bytes adds up to 0xBABA (ignoring the carry byte)
+#Last two bytes 7E and 7F are adjusted to meet the above case.
+#Python example 
+ 
+foo = "00 1B 21 13 00 6D 20 04 46 F7 80 10 FF FF FF FF 69 E4 03 81 6B 02 1F A0 86 80 D3 10 FF FF 58 9C 00 00 01 20 94 7E FF FF 00 10 48 00 00 00 04 27 C9 6C 50 31 3E 07 0B 46 84 2D 40 01 00 F0 06 07 00 60 00 71 08 14 FF FF 01 4D EC 92 5C FC 83 F0 28 00 33 02 50 00 1F 7D 61 19 53 04 A0 00 FF FF 00 01 00 40 15 13 03 40 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 30 01 FF FF D5 11".split()
+
+bar = []
+
+for i in range(len(foo)/2):
+    bar.append(s[(i*2)+1]+s[i*2])
+
+hex(sum(map(lambda x: int(x, 16), bar)))
+
+result is ...,0xBA,0xBA
+
+
+
+
+
