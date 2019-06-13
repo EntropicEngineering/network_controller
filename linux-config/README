@@ -1,6 +1,7 @@
 #To configure the AMM Router
 sudo apt-mark hold firmware-atheros lxqt* liblxqt* (to prevent driver and GUI crashes)
 sudo apt update 
+sudo apt install dnsmasq nftables
 sudo apt upgrade
 sudo su
 ip link set dev WLAN down
