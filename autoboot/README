@@ -1,0 +1,5 @@
+On a *NIX System
+1) Install AVRDUDE
+2) Put https://github.com/adam-dej/avr-toolchain-patches/blob/master/avrdude-config/.avrduderc in ~/.avrdude
+3) Connect programmer and flash the file
+avrdude -p t841 -P usb -c avrispmkii -U flash:w:ammdk-autoboot.hex -U flash:v:ammdk-autoboot.hex
