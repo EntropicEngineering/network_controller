@@ -1,15 +1,13 @@
 #To configure the AMM Router
 sudo apt-mark hold firmware-atheros lxqt* liblxqt* (to prevent driver and GUI crashes)
 sudo apt update 
-sudo apt install dnsmasq nftables
+sudo apt install dnsmasq nftables hostapd
 sudo apt upgrade (repeat this until autoremove, update and upgrade no longer yield new actions)
-
+sudo systemctl unmask hostapd
+sudo systemctl enable hostapd
+sudo systemctl start hostapd
 
 systemctl enable nftables
 systemctl start nftables
 
-nmcli dev  -> look to see connections are correct
 
-Potentially needed if con up doesn't work after reboot
-UUID=$(grep uuid /etc/NetworkManager/system-connections/*NAME OF CONNECTION*/ | cut -d= -f2)
-nmcli con up uuid $UUID
