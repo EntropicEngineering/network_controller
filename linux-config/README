@@ -1,13 +1,19 @@
 #To configure the AMM Router
 sudo apt-mark hold firmware-atheros lxqt* liblxqt* (to prevent driver and GUI crashes)
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target (disable suspend due to known issues with suspend/resume stability)
 sudo apt update 
+sudo apt upgrade (repeat this until autoremove, update and upgrade no longer yield new actions, reboots and dpkg commands may be required as the system shuts down due to one of the updates) 
 sudo apt install dnsmasq nftables hostapd
-sudo apt upgrade (repeat this until autoremove, update and upgrade no longer yield new actions)
+sudo reboot
+
+move contents of .../linux-config/etc into /etc
+
+sudo systemctl enable nftables
+sudo systemctl start nftables
 sudo systemctl unmask hostapd
 sudo systemctl enable hostapd
-sudo systemctl start hostapd
+sudo reboot
 
-systemctl enable nftables
-systemctl start nftables
+
 
 
