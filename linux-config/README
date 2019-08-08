@@ -2,14 +2,9 @@
 sudo apt-mark hold firmware-atheros lxqt* liblxqt* (to prevent driver and GUI crashes)
 sudo apt update 
 sudo apt install dnsmasq nftables
-sudo apt upgrade
-sudo su
-ip link set dev WLAN down
-nmcli con add type wifi ifname WLAN con-name AMMWLAN autoconnect yes ssid "AMM" 802-11-wireless.mode ap
-nmcli con mod AMMWLAN ipv4.method manual ipv4.addresses 192.168.0.1/16
-nmcli con mod AMMWLAN 802-11-wireless-security.key-mgmt wpa-psk
-nmcli con mod AMMWLAN 802-11-wireless-security.psk "lift-repeated-manikin"
-nmcli con up AMMWLAN
+sudo apt upgrade (repeat this until autoremove, update and upgrade no longer yield new actions)
+
+
 systemctl enable nftables
 systemctl start nftables
 
