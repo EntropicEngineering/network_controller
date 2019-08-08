@@ -8,7 +8,7 @@ sudo reboot
 
 move contents of .../linux-config/etc into /etc
 
-systemctl enable nftables
+sudo systemctl enable nftables
 sudo systemctl start nftables
 sudo systemctl unmask hostapd
 sudo systemctl enable hostapd
